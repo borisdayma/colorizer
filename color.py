@@ -8,14 +8,14 @@ import wandb
 from wandb.keras import WandbCallback
 import subprocess
 import os
-
 from PIL import Image
 import numpy as np
+import cv2
 
 run = wandb.init()
 config = run.config
 
-config.num_epochs = 100
+config.num_epochs = 1
 config.batch_size = 4
 config.img_dir = "images"
 config.height = 256
@@ -27,7 +27,7 @@ train_dir = 'train'
 # automatically get the data if it doesn't exist
 if not os.path.exists("train"):
     print("Downloading dog/cat dataset...")
-    subprocess.check_output("curl https://storage.googleapis.com/l2kzone/flowers.tar | tar xvz", shell=True)
+    subprocess.check_output("curl https://storage.googleapis.com/l2kzone/flowers.tar | tar xz", shell=True)
 
 def my_generator(batch_size, img_dir):
     """A generator that returns black and white images and color images"""
@@ -60,6 +60,8 @@ model.compile(optimizer='adam', loss='mse')
 (val_bw_images, val_color_images) = next(my_generator(145, val_dir))
 
 model.fit_generator( my_generator(config.batch_size, train_dir),
-                     samples_per_epoch=20,
-                     nb_epoch=config.num_epochs, callbacks=[WandbCallback(data_type='image')],
+                     steps_per_epoch=20,
+                     epochs=config.num_epochs, callbacks=[WandbCallback(data_type='image')],
                      validation_data=(val_bw_images, val_color_images))
+
+
