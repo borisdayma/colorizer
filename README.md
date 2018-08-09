@@ -16,4 +16,5 @@ Things to try:
 
 - Fancier architectures
 - Different loss functions
+- Data augmentation
 - More training data?
