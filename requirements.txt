@@ -1,0 +1,5 @@
+keras
+wandb
+tensorflow
+pillow
+opencv-python
