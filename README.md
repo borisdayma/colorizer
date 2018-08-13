@@ -10,7 +10,7 @@ The python script color.py is scaffolding code to automatically load images of f
 
 You are welcome to use other ML architectures besides keras, but please use *wandb.log({"loss": loss})* so that we can see your performance.
 
-At the end of the day, we will try your models on new sample images, so please make sure *run.py <model_path> <input_img_path> <output_img_path>* produces nice output.
+At the end of the day, we will try your models on new sample images, so please make sure *run.py <model_path> <input_img_path> <output_img_path>* produces nice output and save your model in your wandb directory (our callback will do this autmatically).
 
 Things to try:
 

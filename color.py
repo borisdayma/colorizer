@@ -26,7 +26,7 @@ train_dir = 'train'
 
 # automatically get the data if it doesn't exist
 if not os.path.exists("train"):
-    print("Downloading dog/cat dataset...")
+    print("Downloading flower dataset...")
     subprocess.check_output("curl https://storage.googleapis.com/l2kzone/flowers.tar | tar xz", shell=True)
 
 def my_generator(batch_size, img_dir):
@@ -61,7 +61,7 @@ model.compile(optimizer='adam', loss='mse')
 
 model.fit_generator( my_generator(config.batch_size, train_dir),
                      steps_per_epoch=20,
-                     epochs=config.num_epochs, callbacks=[WandbCallback(data_type='image')],
+                     epochs=config.num_epochs, callbacks=[WandbCallback(data_type='image', predictions=16)],
                      validation_data=(val_bw_images, val_color_images))
 
 
