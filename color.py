@@ -87,7 +87,7 @@ for n_layer in range(1, n_layers):
     CrCb = BatchNormalization()(CrCb)
 
 # Create output classes
-CrCb = Conv2D(2, (1, 1), activation='sigmoid', padding='same')(CrCb)
+CrCb = Conv2D(2, (1, 1), activation='tanh', padding='same')(CrCb)
 
 model = Model(inputs=input_gray, outputs = CrCb)
 model.compile(optimizer='adam', loss='mse')
