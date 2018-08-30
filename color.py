@@ -1,5 +1,5 @@
 from keras.layers import Input, Dense, Flatten, Reshape, Conv2D, SeparableConv2D, UpSampling2D, MaxPooling2D, BatchNormalization, concatenate
-from keras.models import Model, Sequential
+from keras.models import Model, Sequential, load_model
 from keras.datasets import mnist
 from keras.callbacks import ModelCheckpoint
 from keras.preprocessing.image import ImageDataGenerator
@@ -21,6 +21,8 @@ config.batch_size = 2
 config.img_dir = "images"
 config.height = 256
 config.width = 256
+config.n_layers = 3
+config.n_filters = 32
 
 val_dir = 'test'
 train_dir = 'train'
@@ -55,53 +57,61 @@ def generator(batch_size, img_dir):
             yield (bw_images, color_images)
 
 
-# Create model
-n_filters = 32
-n_layers = 5
+def create_model_and_train(n_layers, n_filters, load_model_path = None):
 
-skip_layers = []
+    if load_model_path:
+        model = load_model(load_model_path)
 
-# First layer
-input_gray = Input(shape = (config.height, config.width))  # same as Y channel
-CrCb = Reshape((config.height, config.width,1))(input_gray)
-CrCb = SeparableConv2D(n_filters, (3, 3), activation='relu', padding='same')(CrCb)
-CrCb = BatchNormalization()(CrCb)
-CrCb = SeparableConv2D(n_filters, (3, 3), activation='relu', padding='same')(CrCb)
-CrCb = BatchNormalization()(CrCb)
+    else:
+        skip_layers = []
 
-# Down layers
-for n_layer in range(1, n_layers):
-    skip_layers.append(CrCb)
-    n_filters *= 2
-    CrCb = MaxPooling2D(2,2)(CrCb)
-    CrCb = SeparableConv2D(n_filters, (3, 3), activation='relu', padding='same')(CrCb)
-    CrCb = BatchNormalization()(CrCb)
-    CrCb = SeparableConv2D(n_filters, (3, 3), activation='relu', padding='same')(CrCb)
-    CrCb = BatchNormalization()(CrCb)
+        # First layer
+        input_gray = Input(shape = (config.height, config.width))  # same as Y channel
+        CrCb = Reshape((config.height, config.width,1))(input_gray)
+        CrCb = SeparableConv2D(n_filters, (3, 3), activation='relu', padding='same')(CrCb)
+        CrCb = BatchNormalization()(CrCb)
+        CrCb = SeparableConv2D(n_filters, (3, 3), activation='relu', padding='same')(CrCb)
+        CrCb = BatchNormalization()(CrCb)
 
- # Up layers are made of Transposed convolution + 2 sets of separable convolution
-for n_layer in range(1, n_layers):
-    n_filters //= 2
-    CrCb = UpSampling2D((2, 2))(CrCb)
-    CrCb = concatenate([CrCb, skip_layers[-n_layer]], axis = -1)
-    CrCb = BatchNormalization()(CrCb)
-    CrCb = SeparableConv2D(n_filters, (3, 3), activation='relu', padding='same')(CrCb)
-    CrCb = BatchNormalization()(CrCb)
-    CrCb = SeparableConv2D(n_filters, (3, 3), activation='relu', padding='same')(CrCb)
-    CrCb = BatchNormalization()(CrCb)
+        # Down layers
+        for n_layer in range(1, n_layers):
+            skip_layers.append(CrCb)
+            n_filters *= 2
+            CrCb = MaxPooling2D(2,2)(CrCb)
+            CrCb = SeparableConv2D(n_filters, (3, 3), activation='relu', padding='same')(CrCb)
+            CrCb = BatchNormalization()(CrCb)
+            CrCb = SeparableConv2D(n_filters, (3, 3), activation='relu', padding='same')(CrCb)
+            CrCb = BatchNormalization()(CrCb)
 
-# Create output classes
-CrCb = Conv2D(2, (1, 1), activation='tanh', padding='same')(CrCb)
+        # Up layers are made of Transposed convolution + 2 sets of separable convolution
+        for n_layer in range(1, n_layers):
+            n_filters //= 2
+            CrCb = UpSampling2D((2, 2))(CrCb)
+            CrCb = concatenate([CrCb, skip_layers[-n_layer]], axis = -1)
+            CrCb = BatchNormalization()(CrCb)
+            CrCb = SeparableConv2D(n_filters, (3, 3), activation='relu', padding='same')(CrCb)
+            CrCb = BatchNormalization()(CrCb)
+            CrCb = SeparableConv2D(n_filters, (3, 3), activation='relu', padding='same')(CrCb)
+            CrCb = BatchNormalization()(CrCb)
 
-model = Model(inputs=input_gray, outputs = CrCb)
-model.compile(optimizer='adam', loss='mse')
+        # Create output classes
+        CrCb = Conv2D(2, (1, 1), activation='tanh', padding='same')(CrCb)
 
-(val_bw_images, val_color_images) = next(generator(145, val_dir))
+        model = Model(inputs=input_gray, outputs = CrCb)
+        model.compile(optimizer='adam', loss='mse')
 
-model.fit_generator(generator(config.batch_size, train_dir),
-                     steps_per_epoch=int(images_per_train_epoch / config.batch_size),
-                     epochs=config.num_epochs, callbacks=[WandbCallback(data_type='image', predictions=16),
-                     ModelCheckpoint(filepath = 'model/weights.{epoch:03d}.hdf5')],  # TODO add datetime
-                     validation_data=(val_bw_images, val_color_images))
+    # Prepare data generator
+    (val_bw_images, val_color_images) = next(generator(145, val_dir))
+
+    # Train
+    model.fit_generator(generator(config.batch_size, train_dir),
+                        steps_per_epoch=int(images_per_train_epoch / config.batch_size),
+                        epochs=config.num_epochs, callbacks=[WandbCallback(data_type='image', predictions=16),
+                        ModelCheckpoint(filepath = 'model/weights.{epoch:03d}.hdf5')],  # TODO add datetime
+                        validation_data=(val_bw_images, val_color_images))
 
 
+if __name__ == "__main__":
+
+    model_path = "model/saved/model_3layers.hdf5"
+    create_model_and_train(config.n_layers, config.n_filters, model_path)
