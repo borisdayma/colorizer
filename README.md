@@ -21,11 +21,11 @@ Things to try:
 
 # Instructions
 
-- Remove corrupt files from training dataset as well as low resolution images. They can easily be identified by their size.
+- Remove corrupt files from training dataset as well as low resolution images. They can easily be identified by their size. Use the command `find . -name "*" -size -16k`
 
 # Ideas
 
-- preprocess all images before training and save to disk
+- preprocess all images before training and save to disk as numpy arrays or resized images
 
 - add data from ImageNet
 
