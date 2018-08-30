@@ -16,7 +16,7 @@ import cv2
 run = wandb.init()
 config = run.config
 
-config.num_epochs = 10 * 20
+config.num_epochs = 100 * 20
 config.batch_size = 2
 config.img_dir = "images"
 config.height = 256
@@ -39,23 +39,25 @@ def generator(batch_size, img_dir):
     We keep only last 2 channels in YCrCb space since Y value is obviously same as gray scale."""
 
     image_filenames = glob.glob(img_dir + "/*")
+    n_files = len(image_filenames)
+    bw_images = np.zeros((batch_size, config.width, config.height))
+    color_images = np.zeros((batch_size, config.width, config.height, 2))
     while True:
-        bw_images = np.zeros((batch_size, config.width, config.height))
-        color_images = np.zeros((batch_size, config.width, config.height, 2))
         random.shuffle(image_filenames)
-        for i, img_path in enumerate(random.sample(image_filenames, batch_size)):
-            img_BGR = cv2.imread(img_path)
-            # TODO apply augmentation (flip, crop, scale) while resizing for test dataset
-            img_BGR = cv2.resize(img_BGR, (config.width, config.height))
-            img_YCrCb = cv2.cvtColor(img_BGR, cv2.COLOR_BGR2YCrCb)
-            color_images[i] = img_YCrCb[..., 1:] / 127.5 - 1
-            bw_images[i] = img_YCrCb[..., 0] / 127.5 - 1
-        yield (bw_images, color_images)
+        for batch_start in range(0, n_files - batch_size + 1, batch_size):
+            for i in range(batch_size):
+                img_path = image_filenames[batch_start + i]            
+                img_BGR = cv2.imread(img_path)
+                img_BGR = cv2.resize(img_BGR, (config.width, config.height))
+                img_YCrCb = cv2.cvtColor(img_BGR, cv2.COLOR_BGR2YCrCb)
+                color_images[i] = img_YCrCb[..., 1:] / 127.5 - 1
+                bw_images[i] = img_YCrCb[..., 0] / 127.5 - 1
+            yield (bw_images, color_images)
 
 
 # Create model
 n_filters = 32
-n_layers = 4
+n_layers = 5
 
 skip_layers = []
 
