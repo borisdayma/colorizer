@@ -31,6 +31,8 @@ if not os.path.exists("train"):
     print("Downloading flower dataset...")
     subprocess.check_output("curl https://storage.googleapis.com/l2kzone/flowers.tar | tar xz", shell=True)
 
+# TODO preprocess data (resize) and save to disk
+
 def generator(batch_size, img_dir):
     """A generator that returns black and white images and color images.
 

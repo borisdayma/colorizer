@@ -25,6 +25,8 @@ Things to try:
 
 # Ideas
 
+- preprocess all images before training and save to disk
+
 - add data from ImageNet
 
 - augment data (crop, flip, scale)
