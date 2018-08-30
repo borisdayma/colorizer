@@ -22,18 +22,31 @@ height=256
 width=256
 
 args = parser.parse_args()
+
+# Load model
 model = keras.models.load_model(args.model)
 
-img = Image.open(args.input_image).resize((width, height))
-color_image = np.array(img)
+# Read and resize image
+img_BGR = cv2.imread(args.input_image)
+img_BGR = cv2.resize(img_BGR, (width, height))
 
-# bw_image is the input image converted to black and white
-bw_image = np.array(img.convert('L'))
-bw_image = bw_image.reshape((1,width,height))  
+# Convert to gray
+img_gray = cv2.cvtColor(img_BGR, cv2.COLOR_BGR2GRAY)
+img_gray = img_gray.reshape((1,width,height))  
 
-recolored_image_array = model.predict(bw_image)
+# Preprocess image
+img_gray = img_gray / 127.5 - 1
 
-# new_image is the output from the model
-new_image = recolored_image_array[0].astype(np.uint8)
-new_image = Image.fromarray(new_image, 'RGB' )
-new_image.save(args.output_image)
+# Predict CrCb channels
+img_CrCb = model.predict(img_gray)[0]
+
+# Reconstitute image
+img_gray = img_gray[0]
+print(img_gray.shape, img_CrCb.shape)
+img_YCrCb = np.dstack((img_gray, img_CrCb))
+img_YCrCb = (img_YCrCb + 1) * 127.5
+img_YCrCb = img_YCrCb.astype(np.uint8)
+
+# Save file
+img_colored = cv2.cvtColor(img_YCrCb, cv2.COLOR_YCrCb2BGR)
+cv2.imwrite(args.output_image, img_colored)
