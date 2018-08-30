@@ -1,0 +1,7 @@
+# Project data files
+test/
+train/
+
+# Wandb files
+wandb/
+wandb/debug.log
