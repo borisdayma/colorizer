@@ -42,7 +42,6 @@ img_CrCb = model.predict(img_gray)[0]
 
 # Reconstitute image
 img_gray = img_gray[0]
-print(img_gray.shape, img_CrCb.shape)
 img_YCrCb = np.dstack((img_gray, img_CrCb))
 img_YCrCb = (img_YCrCb + 1) * 127.5
 img_YCrCb = img_YCrCb.astype(np.uint8)
