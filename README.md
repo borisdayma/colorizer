@@ -18,3 +18,13 @@ Things to try:
 - Different loss functions
 - Data augmentation
 - More training data?
+
+# Instructions
+
+- Remove corrupt files from training dataset as well as low resolution images. They can easily be identified by their size.
+
+# Ideas
+
+- add data from ImageNet
+
+- augment data (crop, flip, scale)
