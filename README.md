@@ -29,4 +29,18 @@ Things to try:
 
 - add data from ImageNet
 
+- upload standard training/validation/test data (preprocessed) to bucket
+
+- create a larger validation set only from provided images
+
 - augment data (crop, flip, scale)
+
+- use ResNet (pre-trained or not) for first layers (at least up to block 4)
+
+- keep list of accuracy for hard mining and do weighted sample based on accuracy at last epoch
+
+- use weight decay (0.001 as a start) if overfitting
+
+- update learning rate after a certain number of epochs
+
+- perform inference from ensemble of models (either on full picture or different crops/scales)
