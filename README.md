@@ -19,9 +19,18 @@ Things to try:
 - Data augmentation
 - More training data?
 
-# Instructions
+# Prepare data (optional)
 
 - Remove corrupt files from training dataset as well as low resolution images. They can easily be identified by their size. Use the command `find . -name "*" -size -16k`
+
+- Use `resize_and_save_data` to preprocess data and `split_train_valid_data` to split it into train and validation datasets
+
+# Instructions
+
+- Download prepared datasets with `wget`
+
+  - https://www.dropbox.com/s/gxbltbsgg3sgb5t/data1.tar.gz?dl=1
+  
 
 # Ideas
 
