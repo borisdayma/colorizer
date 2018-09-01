@@ -9,11 +9,8 @@ import wandb
 from wandb.keras import WandbCallback
 import subprocess
 import os
-from PIL import Image
 import numpy as np
 import cv2
-from pathlib import Path
-import os, shutil
 
 run = wandb.init()
 config = run.config
@@ -24,46 +21,20 @@ config.img_dir = "images"
 config.height = 256
 config.width = 256
 config.n_layers = 3
-config.n_filters = 32
+config.n_filters = 16
+config.dataset = 'custom'
 
-val_dir = 'data/processed/valid'
-train_dir = 'data/processed/train'
-images_per_train_epoch = len(glob.glob(train_dir + "/*"))
+val_dir = 'data/merged/valid'
+train_dir = 'data/merged/train'
+
 images_per_val_epoch = len(glob.glob(val_dir + "/*"))
+images_per_train_epoch = 5 * images_per_val_epoch
+#images_per_train_epoch = len(glob.glob(train_dir + "/*"))
 
 # automatically get the data if it doesn't exist
 # if not os.path.exists("train"):
 #     print("Downloading flower dataset...")
 #     subprocess.check_output("curl https://storage.googleapis.com/l2kzone/flowers.tar | tar xz", shell=True)
-
-def resize_and_save_data(raw_data_paths, processed_data_path, width, height):
-    
-    print('\nResizing and Saving data')
-    for raw_data_path in raw_data_paths:
-        img_filenames = glob.glob(raw_data_path + "/*")
-        for img_path in img_filenames:
-            img_BGR = cv2.imread(img_path)
-            img_BGR = cv2.resize(img_BGR, (width, height))
-            stem = Path(img_path).stem
-            processed_path = processed_data_path + "/" + stem + ".jpg"
-            cv2.imwrite(processed_path, img_BGR)
-    print('Resizing and Saving data complete\n')
-
-# Ex: resize_and_save_data(['data/raw/test', 'data/raw/train'], 'data/processed', config.width, config.height)
-
-def split_train_valid_data(data_path, valid_split = 0.2):
-
-    img_filenames = glob.glob(data_path + "/*")
-    random.shuffle(img_filenames)
-    os.makedirs(data_path + "/train", exist_ok=True)
-    os.makedirs(data_path + "/valid", exist_ok=True)
-    split = round(len(img_filenames) * valid_split)
-    for img in img_filenames[:split]:
-        shutil.move(img, data_path + "/valid/")
-    for img in img_filenames[split:]:
-        shutil.move(img, data_path + "/train/")
-
-# Ex: split_train_valid_data('data/processed')
 
 def generator(batch_size, img_dir):
     """A generator that returns black and white images and color images.
