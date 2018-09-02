@@ -24,39 +24,53 @@ config.n_layers = 4
 config.n_filters = 32
 config.dataset = 'custom'
 
-val_dir = 'data/merged/valid'
-train_dir = 'data/merged/train'
+model_path = None
 
-images_per_val_epoch = len(glob.glob(val_dir + "/*"))
-images_per_train_epoch = 5 * images_per_val_epoch
-#images_per_train_epoch = len(glob.glob(train_dir + "/*"))
+val_dir = 'data/' + config.dataset + '/valid'
+train_dir = 'data/' + config.dataset + '/train'
+
+images_per_val_epoch = len(glob.glob(val_dir + "/*/*"))
+images_per_train_epoch = 9 * images_per_val_epoch
 
 # automatically get the data if it doesn't exist
 # if not os.path.exists("train"):
 #     print("Downloading flower dataset...")
 #     subprocess.check_output("curl https://storage.googleapis.com/l2kzone/flowers.tar | tar xz", shell=True)
 
-def generator(batch_size, img_dir):
+def generator(batch_size, img_dir, training = False):
     """A generator that returns black and white images and color images.
 
     We keep only last 2 channels in YCrCb space since Y value is obviously same as gray scale."""
+
+    if training:
+        datagen = ImageDataGenerator(
+                    rotation_range=40,
+                    width_shift_range=0.2,
+                    height_shift_range=0.2,
+                    zoom_range=0.2,
+                    horizontal_flip=True,
+                    fill_mode='nearest')
+    else:
+        datagen = ImageDataGenerator()
 
     bw_images = np.zeros((batch_size, config.width, config.height))
     color_images = np.zeros((batch_size, config.width, config.height, 2))
     while True:
         # Reload list of images (in case we updated it during training)
-        image_filenames = glob.glob(img_dir + "/*")
+        dataflow = datagen.flow_from_directory(
+                    img_dir,
+                    target_size=(config.height, config.width),
+                    batch_size=1,
+                    class_mode=None)
+        image_filenames = glob.glob(img_dir + "/*/*")
         n_files = len(image_filenames)
-        random.shuffle(image_filenames)
         for batch_start in range(0, n_files - batch_size + 1, batch_size):
             for i in range(batch_size):
-                img_path = image_filenames[batch_start + i]            
-                img_BGR = cv2.imread(img_path)
-                if img_BGR.shape != (256, 256, 3): # it has not been resized yet
-                    img_BGR = cv2.resize(img_BGR, (config.width, config.height))
-                if 'train' in img_path and random.random() > 0.5:  # we can flip randomly the image
-                    img_BGR = cv2.flip(img_BGR, 1)
-                img_YCrCb = cv2.cvtColor(img_BGR, cv2.COLOR_BGR2YCrCb)
+                img_RGB = next(dataflow)[0]
+                if img_RGB.shape != (256, 256, 3): # it has not been resized yet
+                    print('wrong size')
+                    img_RGB = cv2.resize(img_RGB, (config.width, config.height))
+                img_YCrCb = cv2.cvtColor(img_RGB, cv2.COLOR_RGB2YCrCb)
                 color_images[i] = img_YCrCb[..., 1:] / 127.5 - 1
                 bw_images[i] = img_YCrCb[..., 0] / 127.5 - 1
             yield (bw_images, color_images)
@@ -109,7 +123,7 @@ def create_model_and_train(n_layers, n_filters, load_model_path = None):
     (val_bw_images, val_color_images) = next(generator(images_per_val_epoch, val_dir))
 
     # Train
-    model.fit_generator(generator(config.batch_size, train_dir),
+    model.fit_generator(generator(config.batch_size, train_dir, training=True),
                         steps_per_epoch=int(images_per_train_epoch / config.batch_size),
                         epochs=config.num_epochs, callbacks=[WandbCallback(data_type='image', predictions=16),
                         ModelCheckpoint(filepath = 'model/weights.{epoch:03d}.hdf5')],  # TODO add datetime
@@ -117,5 +131,4 @@ def create_model_and_train(n_layers, n_filters, load_model_path = None):
 
 if __name__ == "__main__":
 
-    model_path = None
     create_model_and_train(config.n_layers, config.n_filters, model_path)
