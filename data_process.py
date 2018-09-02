@@ -17,10 +17,11 @@ def resize_and_save_data(raw_data_paths, processed_data_path, width, height):
         img_filenames = glob.glob(raw_data_path + "/*")
         for img_path in img_filenames:
             img_BGR = cv2.imread(img_path)
-            img_BGR = cv2.resize(img_BGR, (width, height))
-            stem = Path(img_path).stem
-            processed_path = processed_data_path + "/" + stem + ".jpg"
-            cv2.imwrite(processed_path, img_BGR)
+            if img_BGR.shape != (256, 256, 3):
+                img_BGR = cv2.resize(img_BGR, (width, height))
+                stem = Path(img_path).stem
+                processed_path = processed_data_path + "/" + stem + ".jpg"
+                cv2.imwrite(processed_path, img_BGR)
     print('Resizing and Saving data complete\n')
 
 def split_train_valid_data(data_path, valid_split = 0.2):
@@ -61,6 +62,6 @@ def find_black_and_white(data_path, delete=False):
 if __name__ == "__main__":
 
     # split_train_valid_data('data/processed')
-    # b_and_w = find_black_and_white('/data/data/flower_photos/todo', delete=True)
-    # resize_and_save_data(['/data/data/flower_photos/done'],
-    #                     '/data/data/flower_photos/processed', 256, 256)
+    b_and_w = find_black_and_white('/data/data/open/OIDv4_ToolKit/OID/Dataset/train/Flower/todo', delete=True)
+    #resize_and_save_data(['/home/boris/Projects/colorizer/data/merged/sorted'],
+    #                    '/home/boris/Projects/colorizer/data/merged/processed', 256, 256)

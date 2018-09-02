@@ -20,8 +20,8 @@ config.batch_size = 2
 config.img_dir = "images"
 config.height = 256
 config.width = 256
-config.n_layers = 3
-config.n_filters = 16
+config.n_layers = 4
+config.n_filters = 32
 config.dataset = 'custom'
 
 val_dir = 'data/merged/valid'
@@ -41,20 +41,18 @@ def generator(batch_size, img_dir):
 
     We keep only last 2 channels in YCrCb space since Y value is obviously same as gray scale."""
 
-    image_filenames = glob.glob(img_dir + "/*")
-    n_files = len(image_filenames)
     bw_images = np.zeros((batch_size, config.width, config.height))
     color_images = np.zeros((batch_size, config.width, config.height, 2))
     while True:
         # Reload list of images (in case we updated it during training)
         image_filenames = glob.glob(img_dir + "/*")
-         n_files = len(image_filenames)
+        n_files = len(image_filenames)
         random.shuffle(image_filenames)
         for batch_start in range(0, n_files - batch_size + 1, batch_size):
             for i in range(batch_size):
                 img_path = image_filenames[batch_start + i]            
                 img_BGR = cv2.imread(img_path)
-                if 'processed' not in img_path: # it has not been resized yet
+                if img_BGR.shape != (256, 256, 3): # it has not been resized yet
                     img_BGR = cv2.resize(img_BGR, (config.width, config.height))
                 if 'train' in img_path and random.random() > 0.5:  # we can flip randomly the image
                     img_BGR = cv2.flip(img_BGR, 1)
