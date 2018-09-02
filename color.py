@@ -46,6 +46,9 @@ def generator(batch_size, img_dir):
     bw_images = np.zeros((batch_size, config.width, config.height))
     color_images = np.zeros((batch_size, config.width, config.height, 2))
     while True:
+        # Reload list of images (in case we updated it during training)
+        image_filenames = glob.glob(img_dir + "/*")
+         n_files = len(image_filenames)
         random.shuffle(image_filenames)
         for batch_start in range(0, n_files - batch_size + 1, batch_size):
             for i in range(batch_size):
@@ -113,7 +116,6 @@ def create_model_and_train(n_layers, n_filters, load_model_path = None):
                         epochs=config.num_epochs, callbacks=[WandbCallback(data_type='image', predictions=16),
                         ModelCheckpoint(filepath = 'model/weights.{epoch:03d}.hdf5')],  # TODO add datetime
                         validation_data=(val_bw_images, val_color_images))
-
 
 if __name__ == "__main__":
 
