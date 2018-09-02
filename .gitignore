@@ -1,6 +1,8 @@
 # Project data files
 test/
 train/
+data/
+model/
 
 # Wandb files
 wandb/
