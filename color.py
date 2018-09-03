@@ -20,7 +20,7 @@ config.batch_size = 2
 config.img_dir = "images"
 config.height = 256
 config.width = 256
-config.n_layers = 4
+config.n_layers = 5
 config.n_filters = 32
 config.dataset = 'custom'
 
@@ -44,10 +44,7 @@ def generator(batch_size, img_dir, training = False):
 
     if training:
         datagen = ImageDataGenerator(
-                    rotation_range=40,
-                    width_shift_range=0.2,
-                    height_shift_range=0.2,
-                    zoom_range=0.2,
+                    zoom_range=(0.85, 1),
                     horizontal_flip=True,
                     fill_mode='nearest')
     else:
