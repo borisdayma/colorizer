@@ -26,10 +26,9 @@ config.dataset = 'custom'
 
 model_path = None
 
-val_dir = 'data/' + config.dataset + '/valid'
-train_dir = 'data/' + config.dataset + '/train'
+data_dir = 'data/'
 
-images_per_val_epoch = len(glob.glob(val_dir + "/*/*"))
+images_per_val_epoch = 1000
 images_per_train_epoch = 9 * images_per_val_epoch
 
 # automatically get the data if it doesn't exist
@@ -49,7 +48,8 @@ def generator(batch_size, img_dir, training = False):
                     height_shift_range=0.2,
                     zoom_range=0.2,
                     horizontal_flip=True,
-                    fill_mode='nearest')
+                    fill_mode='nearest'
+                    validation_split=0.05)
     else:
         datagen = ImageDataGenerator()
 
@@ -57,11 +57,14 @@ def generator(batch_size, img_dir, training = False):
     color_images = np.zeros((batch_size, config.width, config.height, 2))
     while True:
         # Reload list of images (in case we updated it during training)
+        subset_data = 'training' if training else 'validation'
         dataflow = datagen.flow_from_directory(
                     img_dir,
                     target_size=(config.height, config.width),
                     batch_size=1,
-                    class_mode=None)
+                    class_mode=None
+                    seed=12345,
+                    subset = subset_data)
         image_filenames = glob.glob(img_dir + "/*/*")
         n_files = len(image_filenames)
         for batch_start in range(0, n_files - batch_size + 1, batch_size):
@@ -120,10 +123,10 @@ def create_model_and_train(n_layers, n_filters, load_model_path = None):
         model.compile(optimizer='adam', loss='mse')
 
     # Load validation data
-    (val_bw_images, val_color_images) = next(generator(images_per_val_epoch, val_dir))
+    (val_bw_images, val_color_images) = next(generator(images_per_val_epoch, data_dir))
 
     # Train
-    model.fit_generator(generator(config.batch_size, train_dir, training=True),
+    model.fit_generator(generator(config.batch_size, data_dir, training=True),
                         steps_per_epoch=int(images_per_train_epoch / config.batch_size),
                         epochs=config.num_epochs, callbacks=[WandbCallback(data_type='image', predictions=16),
                         ModelCheckpoint(filepath = 'model/weights.{epoch:03d}.hdf5')],  # TODO add datetime
