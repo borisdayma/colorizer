@@ -11,6 +11,7 @@ import subprocess
 import os
 import numpy as np
 import cv2
+from pathlib import Path
 
 run = wandb.init()
 config = run.config
@@ -22,55 +23,71 @@ config.height = 256
 config.width = 256
 config.n_layers = 5
 config.n_filters = 32
+config.crop = 0.15 / 2
 config.dataset = 'custom'
 
 model_path = None
 
+# Note: data is in subdirectories within folders (ie data/train/set_1/img.jpg)
 train_dir = 'data/train/'
 valid_dir = 'data/validation/'
 
 images_per_val_epoch = len(glob.glob(valid_dir + '/*/*'))
 images_per_train_epoch = 9 * images_per_val_epoch
 
-# automatically get the data if it doesn't exist
-# if not os.path.exists("train"):
-#     print("Downloading flower dataset...")
-#     subprocess.check_output("curl https://storage.googleapis.com/l2kzone/flowers.tar | tar xz", shell=True)
-
-def generator(batch_size, img_dir, training = False):
+def generator(batch_size, img_dir, training = False, save_to_dir = None):
     """A generator that returns black and white images and color images.
 
     We keep only last 2 channels in YCrCb space since Y value is obviously same as gray scale."""
 
-    if training:
-        datagen = ImageDataGenerator(
-                    zoom_range=(0.85, 1),
-                    horizontal_flip=True,
-                    fill_mode='nearest')
-    else:
-        datagen = ImageDataGenerator()
+    def random_crop(img, ratio):
+
+        w, h = img.shape[0], img.shape[1]
+        crop_x1 = int(ratio * random.random() * w)
+        crop_y1 = int(ratio * random.random() * h)
+        crop_x2 = int((1 - ratio * random.random()) * w)
+        crop_y2 = int((1 - ratio * random.random()) * h)
+
+        return img[crop_x1:crop_x2, crop_y1:crop_y2, :]
 
     bw_images = np.zeros((batch_size, config.width, config.height))
     color_images = np.zeros((batch_size, config.width, config.height, 2))
+
     while True:
+
         # Reload list of images (in case we updated it during training)
-        dataflow = datagen.flow_from_directory(
-                    img_dir,
-                    target_size=(config.height, config.width),
-                    batch_size=1,
-                    class_mode=None)
         image_filenames = glob.glob(img_dir + "/*/*")
         n_files = len(image_filenames)
+        random.shuffle(image_filenames)
         for batch_start in range(0, n_files - batch_size + 1, batch_size):
             for i in range(batch_size):
-                img_RGB = next(dataflow)[0]
-                if img_RGB.shape != (256, 256, 3): # should never happen
-                    img_RGB = cv2.resize(img_RGB, (config.width, config.height))
-                img_YCrCb = cv2.cvtColor(img_RGB, cv2.COLOR_RGB2YCrCb)
+
+                # Load image
+                img_path = image_filenames[batch_start + i]            
+                img_BGR = cv2.imread(img_path)
+
+                # Random cropping
+                if training and config.crop:
+                    img_BGR = random_crop(img_BGR, config.crop)
+
+                # Resizing
+                if img_BGR.shape != (256, 256, 3): # it has not been resized yet
+                    img_BGR = cv2.resize(img_BGR, (config.width, config.height))
+                
+                # Random flipping
+                if training and random.random() > 0.5:  # we can flip randomly the image
+                    img_BGR = cv2.flip(img_BGR, 1)
+
+                # Save data
+                if save_to_dir:
+                    output_name = Path(img_path).name
+                    cv2.imwrite(save_to_dir + '/' + output_name, img_BGR)
+
+                # Convert to YCrCb and yield data as (Y, CrCb)
+                img_YCrCb = cv2.cvtColor(img_BGR, cv2.COLOR_BGR2YCrCb)
                 color_images[i] = img_YCrCb[..., 1:] / 127.5 - 1
                 bw_images[i] = img_YCrCb[..., 0] / 127.5 - 1
             yield (bw_images, color_images)
-
 
 def create_model_and_train(n_layers, n_filters, load_model_path = None):
 
