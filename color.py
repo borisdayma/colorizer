@@ -12,6 +12,7 @@ import os
 import numpy as np
 import cv2
 from pathlib import Path
+from itertools import chain
 
 run = wandb.init()
 config = run.config
@@ -141,6 +142,58 @@ def create_model_and_train(n_layers, n_filters, load_model_path = None):
                         epochs=config.num_epochs, callbacks=[WandbCallback(data_type='image', predictions=16),
                         ModelCheckpoint(filepath = 'model/weights.{epoch:03d}.hdf5')],  # TODO add datetime
                         validation_data=(val_bw_images, val_color_images))
+
+def wandb_log_images(self, num_images=36):
+    ''' Custom logging function adapted to this project '''
+
+    validation_X = self.validation_data[0]
+    validation_y = self.validation_data[1]
+
+    validation_length = len(validation_X)
+
+    if validation_length > num_images:
+        # pick some data at random
+        indices = np.random.choice(validation_length, num_images)
+    else:
+        indices = range(validation_length)
+
+    test_data = []
+    test_output = []
+    predictions = []
+
+    for i in indices:
+
+        # input data
+        test_example = ((validation_X[i] + 1) * 127.5).astype(np.uint8)
+        test_data.append(test_example)
+
+        # label
+        test_label_YCrCb = np.dstack((validation_X[i], validation_y[i]))
+        test_label_YCrCb = (test_label_YCrCb + 1) * 127.5
+        test_label_YCrCb = test_label_YCrCb.astype(np.uint8)
+        test_label = cv2.cvtColor(test_label_YCrCb, cv2.COLOR_YCrCb2RGB)
+        test_output.append(test_label)
+
+        # prediction
+        model_input = validation_X[i].reshape((1,config.width,config.height))
+        prediction = self.model.predict(model_input)[0]
+        prediction_YCrCb = np.dstack((validation_X[i], prediction))
+        prediction_YCrCb = (prediction_YCrCb + 1) * 127.5
+        prediction_YCrCb = prediction_YCrCb.astype(np.uint8)
+        prediction = cv2.cvtColor(prediction_YCrCb, cv2.COLOR_YCrCb2RGB)
+        predictions.append(prediction)
+
+    # Looks like the model is outputting an image
+    input_images = [wandb.Image(data, grouping=3)
+                    for data in test_data]
+    output_images = [wandb.Image(prediction)
+                        for prediction in predictions]
+    reference_images = [wandb.Image(data)
+                        for data in test_output]
+    return list(chain.from_iterable(zip(input_images, output_images, reference_images)))
+
+# Overwrite wandb callback
+WandbCallback._log_images = wandb_log_images
 
 if __name__ == "__main__":
 
