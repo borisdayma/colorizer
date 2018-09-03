@@ -29,7 +29,7 @@ model_path = None
 train_dir = 'data/train/'
 valid_dir = 'data/validation/'
 
-images_per_val_epoch = glob.glob(valid_dir + '/*/*')
+images_per_val_epoch = len(glob.glob(valid_dir + '/*/*'))
 images_per_train_epoch = 9 * images_per_val_epoch
 
 # automatically get the data if it doesn't exist
@@ -61,15 +61,13 @@ def generator(batch_size, img_dir, training = False):
                     img_dir,
                     target_size=(config.height, config.width),
                     batch_size=1,
-                    class_mode=None,
-                    seed=12345)
+                    class_mode=None)
         image_filenames = glob.glob(img_dir + "/*/*")
         n_files = len(image_filenames)
         for batch_start in range(0, n_files - batch_size + 1, batch_size):
             for i in range(batch_size):
                 img_RGB = next(dataflow)[0]
-                if img_RGB.shape != (256, 256, 3): # it has not been resized yet
-                    print('wrong size')
+                if img_RGB.shape != (256, 256, 3): # should never happen
                     img_RGB = cv2.resize(img_RGB, (config.width, config.height))
                 img_YCrCb = cv2.cvtColor(img_RGB, cv2.COLOR_RGB2YCrCb)
                 color_images[i] = img_YCrCb[..., 1:] / 127.5 - 1
