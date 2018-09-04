@@ -23,7 +23,7 @@ config.batch_size = 2
 config.img_dir = "images"
 config.height = 256
 config.width = 256
-config.n_layers = 2
+config.n_layers = 5
 config.n_filters = 32
 config.crop = 0.15 / 2
 config.l2_loss = 0.001
@@ -110,8 +110,8 @@ def create_model_and_train(n_layers, n_filters, load_model_path = None):
                                        pointwise_regularizer=regularizers.l2(config.l2_loss),
                                        bias_regularizer=regularizers.l2(config.l2_loss))(CrCb)
             else:                  
-                CrCb = SeparableConv2D(n_filters, (3, 3), activation='relu', padding='same')(CrCb)
-            CrCb = BatchNormalization()(CrCb)
+        CrCb = SeparableConv2D(n_filters, (3, 3), activation='relu', padding='same')(CrCb)
+        CrCb = BatchNormalization()(CrCb)
 
         # Down layers
         for n_layer in range(1, n_layers):
@@ -125,8 +125,8 @@ def create_model_and_train(n_layers, n_filters, load_model_path = None):
                                         pointwise_regularizer=regularizers.l2(config.l2_loss),
                                         bias_regularizer=regularizers.l2(config.l2_loss))(CrCb)
                 else:                  
-                    CrCb = SeparableConv2D(n_filters, (3, 3), activation='relu', padding='same')(CrCb)
-                CrCb = BatchNormalization()(CrCb)
+            CrCb = SeparableConv2D(n_filters, (3, 3), activation='relu', padding='same')(CrCb)
+            CrCb = BatchNormalization()(CrCb)
 
         # Up layers are made of Transposed convolution + 2 sets of separable convolution
         for n_layer in range(1, n_layers):
@@ -146,12 +146,12 @@ def create_model_and_train(n_layers, n_filters, load_model_path = None):
                                         pointwise_regularizer=regularizers.l2(config.l2_loss),
                                         bias_regularizer=regularizers.l2(config.l2_loss))(CrCb)
                 else:                  
-                    CrCb = SeparableConv2D(n_filters, (3, 3), activation='relu', padding='same')(CrCb)
-                CrCb = BatchNormalization()(CrCb)
+            CrCb = SeparableConv2D(n_filters, (3, 3), activation='relu', padding='same')(CrCb)
+            CrCb = BatchNormalization()(CrCb)
 
         # Create output classes
         if config.l2_loss:
-            CrCb = Conv2D(2, (1, 1), activation='tanh', padding='same')(CrCb)
+        CrCb = Conv2D(2, (1, 1), activation='tanh', padding='same')(CrCb)
         else:
             CrCb = Conv2D(2, (1, 1), activation='tanh', padding='same',
                           kernel_regularizer=regularizers.l2(config.l2_loss),
