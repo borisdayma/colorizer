@@ -1,8 +1,9 @@
-from keras.layers import Input, Dense, Flatten, Reshape, Conv2D, SeparableConv2D, UpSampling2D, MaxPooling2D, BatchNormalization, concatenate
+from keras.layers import Input, Dense, Flatten, Reshape, Conv2D, SeparableConv2D, Conv2DTranspose, MaxPooling2D, BatchNormalization, concatenate
 from keras.models import Model, Sequential, load_model
 from keras.datasets import mnist
 from keras.callbacks import ModelCheckpoint
 from keras.preprocessing.image import ImageDataGenerator
+from keras import regularizers
 import random
 import glob
 import wandb
@@ -22,9 +23,10 @@ config.batch_size = 2
 config.img_dir = "images"
 config.height = 256
 config.width = 256
-config.n_layers = 5
+config.n_layers = 2
 config.n_filters = 32
 config.crop = 0.15 / 2
+config.l2_loss = 0.001
 config.dataset = 'custom'
 
 model_path = None
@@ -33,7 +35,7 @@ model_path = None
 train_dir = 'data/train/'
 valid_dir = 'data/validation/'
 
-images_per_val_epoch = len(glob.glob(valid_dir + '/*/*'))
+images_per_val_epoch = len(glob.glob(valid_dir + '/**/*.jpg', recursive=True))
 images_per_train_epoch = 9 * images_per_val_epoch
 
 def generator(batch_size, img_dir, training = False, save_to_dir = None):
@@ -57,7 +59,7 @@ def generator(batch_size, img_dir, training = False, save_to_dir = None):
     while True:
 
         # Reload list of images (in case we updated it during training)
-        image_filenames = glob.glob(img_dir + "/*/*")
+        image_filenames = glob.glob(img_dir + "/**/*.jpg", recursive=True)
         n_files = len(image_filenames)
         random.shuffle(image_filenames)
         for batch_start in range(0, n_files - batch_size + 1, batch_size):
@@ -101,34 +103,59 @@ def create_model_and_train(n_layers, n_filters, load_model_path = None):
         # First layer
         input_gray = Input(shape = (config.height, config.width))  # same as Y channel
         CrCb = Reshape((config.height, config.width,1))(input_gray)
-        CrCb = SeparableConv2D(n_filters, (3, 3), activation='relu', padding='same')(CrCb)
-        CrCb = BatchNormalization()(CrCb)
-        CrCb = SeparableConv2D(n_filters, (3, 3), activation='relu', padding='same')(CrCb)
-        CrCb = BatchNormalization()(CrCb)
+        for i in range(2):
+            if config.l2_loss:
+                CrCb = SeparableConv2D(n_filters, (3, 3), activation='relu', padding='same',
+                                       depthwise_regularizer=regularizers.l2(config.l2_loss),
+                                       pointwise_regularizer=regularizers.l2(config.l2_loss),
+                                       bias_regularizer=regularizers.l2(config.l2_loss))(CrCb)
+            else:                  
+                CrCb = SeparableConv2D(n_filters, (3, 3), activation='relu', padding='same')(CrCb)
+            CrCb = BatchNormalization()(CrCb)
 
         # Down layers
         for n_layer in range(1, n_layers):
             skip_layers.append(CrCb)
             n_filters *= 2
             CrCb = MaxPooling2D(2,2)(CrCb)
-            CrCb = SeparableConv2D(n_filters, (3, 3), activation='relu', padding='same')(CrCb)
-            CrCb = BatchNormalization()(CrCb)
-            CrCb = SeparableConv2D(n_filters, (3, 3), activation='relu', padding='same')(CrCb)
-            CrCb = BatchNormalization()(CrCb)
+            for i in range(2):
+                if config.l2_loss:
+                    CrCb = SeparableConv2D(n_filters, (3, 3), activation='relu', padding='same',
+                                        depthwise_regularizer=regularizers.l2(config.l2_loss),
+                                        pointwise_regularizer=regularizers.l2(config.l2_loss),
+                                        bias_regularizer=regularizers.l2(config.l2_loss))(CrCb)
+                else:                  
+                    CrCb = SeparableConv2D(n_filters, (3, 3), activation='relu', padding='same')(CrCb)
+                CrCb = BatchNormalization()(CrCb)
 
         # Up layers are made of Transposed convolution + 2 sets of separable convolution
         for n_layer in range(1, n_layers):
             n_filters //= 2
-            CrCb = UpSampling2D((2, 2))(CrCb)
+            if config.l2_loss:
+                CrCb = Conv2DTranspose(n_filters, (2, 2), strides=2, activation='relu', padding='same',
+                                       kernel_regularizer=regularizers.l2(config.l2_loss),
+                                       bias_regularizer=regularizers.l2(config.l2_loss))(CrCb)
+            else:
+                CrCb = Conv2DTranspose(n_filters, (2, 2), strides=2, activation='relu', padding='same')(CrCb)
             CrCb = concatenate([CrCb, skip_layers[-n_layer]], axis = -1)
             CrCb = BatchNormalization()(CrCb)
-            CrCb = SeparableConv2D(n_filters, (3, 3), activation='relu', padding='same')(CrCb)
-            CrCb = BatchNormalization()(CrCb)
-            CrCb = SeparableConv2D(n_filters, (3, 3), activation='relu', padding='same')(CrCb)
-            CrCb = BatchNormalization()(CrCb)
+            for i in range(2):
+                if config.l2_loss:
+                    CrCb = SeparableConv2D(n_filters, (3, 3), activation='relu', padding='same',
+                                        depthwise_regularizer=regularizers.l2(config.l2_loss),
+                                        pointwise_regularizer=regularizers.l2(config.l2_loss),
+                                        bias_regularizer=regularizers.l2(config.l2_loss))(CrCb)
+                else:                  
+                    CrCb = SeparableConv2D(n_filters, (3, 3), activation='relu', padding='same')(CrCb)
+                CrCb = BatchNormalization()(CrCb)
 
         # Create output classes
-        CrCb = Conv2D(2, (1, 1), activation='tanh', padding='same')(CrCb)
+        if config.l2_loss:
+            CrCb = Conv2D(2, (1, 1), activation='tanh', padding='same')(CrCb)
+        else:
+            CrCb = Conv2D(2, (1, 1), activation='tanh', padding='same',
+                          kernel_regularizer=regularizers.l2(config.l2_loss),
+                          bias_regularizer=regularizers.l2(config.l2_loss))(CrCb)
 
         model = Model(inputs=input_gray, outputs = CrCb)
         model.compile(optimizer='adam', loss='mse')
