@@ -3,7 +3,7 @@ from keras.models import Model, Sequential, load_model
 from keras.datasets import mnist
 from keras.callbacks import ModelCheckpoint
 from keras.preprocessing.image import ImageDataGenerator
-from keras import regularizers
+from keras import regularizers, optimizers
 import random
 import glob
 import wandb
@@ -27,7 +27,7 @@ config.n_layers = 5
 config.n_filters = 32
 config.crop = 0.15 / 2
 config.l2_loss = None
-config.dataset = 'custom'
+config.learning_rate = 1e-3
 
 model_path = None
 
@@ -164,7 +164,10 @@ def create_model_and_train(n_layers, n_filters, load_model_path = None):
             CrCb = Conv2D(2, (1, 1), activation='tanh', padding='same')(CrCb)
 
         model = Model(inputs=input_gray, outputs = CrCb)
-        model.compile(optimizer='adam', loss='mse')
+    
+    # Set optimizer
+    adam = optimizers.Adam(lr=config.learning_rate)
+    model.compile(optimizer=adam, loss='mse')
 
     # Load validation data
     (val_bw_images, val_color_images) = next(generator(images_per_val_epoch, valid_dir))
