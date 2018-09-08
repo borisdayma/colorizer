@@ -44,7 +44,7 @@ def find_black_and_white(data_path, delete=False):
     if delete:
         print('Images going to be removed')
     img_b_and_w = []
-    img_filenames = glob.glob(data_path + "/*")
+    img_filenames = glob.glob(data_path + "/**/*.jpg", recursive=True)
     for img_path in img_filenames:
         img_BGR = cv2.imread(img_path)
         # Check Cr and Cb channels are constant
@@ -61,7 +61,5 @@ def find_black_and_white(data_path, delete=False):
 
 if __name__ == "__main__":
 
-    # split_train_valid_data('data/processed')
-    b_and_w = find_black_and_white('/data/data/open/OIDv4_ToolKit/OID/Dataset/train/Flower/todo', delete=True)
-    #resize_and_save_data(['/home/boris/Projects/colorizer/data/merged/sorted'],
-    #                    '/home/boris/Projects/colorizer/data/merged/processed', 256, 256)
+    pass
+    
