@@ -7,3 +7,9 @@ model/
 # Wandb files
 wandb/
 wandb/debug.log
+
+# IDE
+.vscode/
+
+# Jupyter notebook
+.ipynb_checkpoints/
