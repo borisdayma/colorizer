@@ -32,7 +32,7 @@ Sample usage for colorizing an image with pre-trained model:
 
 `run.py model/0uiwhl8e.073.h5 <input_image> <output_image>`
 
-The first argument corresponds to a pre-trained model. It corresponds to run `0uiwhl8e` in Weights & Biases.
+The first argument corresponds to a pre-trained model.
 
 ## Architecture
 
@@ -101,7 +101,9 @@ Validation dataset was also cleaned and extended with more data for more stable 
 
 [Weights & Biases](https://www.wandb.com/) was used to monitor the training and optimize the architecture:
 
-- First baseline was set with [5 layers and 32 initial filters](https://app.wandb.ai/borisd13/colorizer/runs/d0k7xg70)
+- [First baseline](https://app.wandb.ai/borisd13/colorizer/runs/d0k7xg70) was set with 5 layers and 32 initial filters
+
+- [Using up-convolution](https://app.wandb.ai/borisd13/colorizer/runs/6dukn40t) instead of up-sampling (per first baseline) did not bring any improvement while increasing significantly model size (it was nevertheless used in further architectures) ;
 
 - [Using 7 layers](https://app.wandb.ai/borisd13/colorizer/runs/pcj7yuvn) on the U-net type architecture lead to overfitting and the depth was then reduced to 6 layers with more data augmentation ;
 
