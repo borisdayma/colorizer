@@ -160,7 +160,9 @@ Here are a few ideas that were not tested due to lack of time:
 
 - Train longer and auto-update learning rate after a certain number of epochs ;
 
-- perform inference from ensemble of models either on full picture or different crops/scales.
+- perform inference from ensemble of models either on full picture or different crops/scales ;
+
+- investigate further use of up-convolution vs simple upsampling (did not lead to better results while increasing model size).
 
 ## Acknowledgements
 
