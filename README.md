@@ -93,19 +93,25 @@ Validation dataset was also cleaned and extended with more data for more stable 
 
 ## Results
 
+![alt](imgs/training_comparison.png)
+
 [Weights & Biases](https://www.wandb.com/) was used to monitor the training and optimize the architecture:
 
-* First baseline was set with [5 layers and 32 initial filters](https://app.wandb.ai/borisd13/colorizer/runs/d0k7xg70)
-* [Using 7 layers](https://app.wandb.ai/borisd13/colorizer/runs/pcj7yuvn) on the U-net type architecture lead to overfitting and the depth was then reduced to 6 layers with more data augmentation ;
-* [Using 64 initial filters](https://app.wandb.ai/borisd13/colorizer/runs/ljg8lgq6) lead to a too large model (above 200Mo) and was much slower to train than when using deep structures ;
-* [Using weight decay](https://app.wandb.ai/borisd13/colorizer/runs/u034weef) lead to a too slow training, even after decreasing several times its contribution to total loss ;
-* The best results were obtained with [6 layers, 32 initial filters and no regularization](TODO insert link)
+- First baseline was set with [5 layers and 32 initial filters](https://app.wandb.ai/borisd13/colorizer/runs/d0k7xg70)
+
+- [Using 7 layers](https://app.wandb.ai/borisd13/colorizer/runs/pcj7yuvn) on the U-net type architecture lead to overfitting and the depth was then reduced to 6 layers with more data augmentation ;
+
+- [Using 64 initial filters](https://app.wandb.ai/borisd13/colorizer/runs/ljg8lgq6) lead to a too large model (above 200Mo) and was much slower to train than when using deep structures ;
+
+- [Using weight decay](https://app.wandb.ai/borisd13/colorizer/runs/u034weef) lead to a too slow training, even after decreasing several times its contribution to total loss ;
+
+- The best results were obtained with [6 layers, 32 initial filters and no regularization](https://app.wandb.ai/borisd13/colorizer/runs/0uiwhl8e)
 
 The most interesting runs can be visualized through the [project summary run](https://app.wandb.ai/borisd13/colorizer?view=default).
 
 The network performs surprisingly well. In addition to identifying flowers, it also often colorizes in a realistic manner the background.
 
-TODO include a gif as example of network result
+![alt](imgs/results_example.png)
 
 We can notice the following:
 
@@ -115,9 +121,18 @@ We can notice the following:
 
 - the sky is ofen colorized in a light green, probably due to the fact that we have too many samples of green background and not enough of the sky ;
 
-- insects (butterflies, bees, etc) are colorized realistically.
+- insects (butterflies, bees, etc) are often colorized realistically ;
 
-The results are nevertheless impressive considering the difficulty we would have to colorize manually several of the black & white pictures.
+- some pictures contain some artifacts with a little patch colorized vividly and randomly.
+
+TODO include more examples to illustrate each observation
+
+The results are nevertheless impressive considering the difficulty we would have to choose manually the right colors on several of the black & white pictures.
+
+Finally, if we want the neural network to colorize a picture it was not trained on (such as a person), it won't work so well…
+As expected, the most common colors from the flower dataset (light pink and green) are used even when the picture does not look like a known flower.
+
+![alt](imgs/person_example.png)
 
 ## Future work
 
