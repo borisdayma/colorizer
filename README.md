@@ -24,11 +24,15 @@ The following files are present:
 - `data_process.py` contains functions to pre-process and sort images ;
 - `run.py` is used to perform inference on an image.
 
+Pre-trained models can be found on the [Releases](https://github.com/borisd13/colorizer/releases) page of the project.
+
+Latest model is based on [Training Run "0uiwhl8e"](https://app.wandb.ai/borisd13/colorizer/runs/0uiwhl8e) and can be downloaded under [release v0.1](https://github.com/borisd13/colorizer/releases/download/v0.1/0uiwhl8e.073.h5).
+
 Sample usage for colorizing an image with pre-trained model:
 
 `run.py model/0uiwhl8e.073.h5 <input_image> <output_image>`
 
-The first argument corresponds to pre-trained model. It corresponds to run `0uiwhl8e` in Weights & Biases.
+The first argument corresponds to a pre-trained model. It corresponds to run `0uiwhl8e` in Weights & Biases.
 
 ## Architecture
 
