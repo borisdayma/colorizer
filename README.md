@@ -144,6 +144,8 @@ As expected, the most common colors from the flower dataset (light pink and gree
 
 Here are a few ideas that were not tested due to lack of time:
 
+- use of CIE L\*a\*b\* color space ;
+
 - regularization through dropout ;
 
 - Weight decay L2 regularization was attempted but unsuccessful, more tuning may be beneficial ;
