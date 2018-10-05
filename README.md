@@ -58,7 +58,7 @@ The neural network is inspired by a few architectures:
 
 In order to train the neural network, label data needs to be provided. Color images were used to define target labels and turned to black & white to simulate input data.
 
-The neural network was initially developped with [provided dataset](https://storage.googleapis.com/l2kzone/flowers.tar).
+The neural network was initially developed with [provided dataset](https://storage.googleapis.com/l2kzone/flowers.tar).
 
 However, several images were not relevant.
 
