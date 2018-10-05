@@ -68,7 +68,7 @@ However, several images were not relevant.
 
 In order to improve training, the data is sorted manually:
 
-- remove black & white pictures (a script was developped in `data_process.py`) ;
+- remove black & white pictures (a script was developed in `data_process.py`) ;
 - remove low quality picture (can base it on the size with the command `find . -name "*" -size -16k -delete`) ;
 - remove "artistic" pictures which apply a filter or turn the image partially black & white ;
 - remove pictures of non-flower items (it seems dogs end up in any type of datasets…) ;
